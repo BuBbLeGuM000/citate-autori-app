@@ -30,17 +30,30 @@ app.get("/", (req, res) => {
 
 // --- RUTE API ---
 
-// Extragem citatele
+// Extragem citatele cu functionalitate de căutare
 app.get("/api/quotes", async (req, res) => {
     try {
         const response = await fetch(JSON_SERVER_URL);
         const data = await response.json();
-        res.json(data);
+        
+        const { search } = req.query; 
+
+        if (search && search.trim()) {
+            const term = search.trim().toLowerCase();
+            const filtered = data.filter(q =>
+                q.author.toLowerCase().includes(term) ||
+                q.quote.toLowerCase().includes(term)
+            );
+            return res.status(200).json(filtered);
+        }
+
+        res.status(200).json(data);
     } catch (error) {
         console.error("Eroare la preluarea citatelor:", error);
         res.status(500).json({ error: "Nu s-au putut prelua citatele" });
     }
 });
+
 // 2. Adaugă un nou citat (cu validare Joi)
 app.post("/api/quotes", async (req, res) => {
     const { error } = quoteSchema.validate(req.body);
