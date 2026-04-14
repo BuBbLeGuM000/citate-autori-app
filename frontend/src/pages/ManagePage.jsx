@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import QuoteCard from "../components/QuoteCard";
 import { getAllQuotes, addQuote, updateQuote, deleteQuote } from "../api/quotesAPi";
@@ -32,9 +32,7 @@ export default function ManagePage() {
 
   const { errors, validate, clearErrors } = useFormValidation(VALIDATION_RULES);
 
-  useEffect(() => { fetchQuotes(); }, []);
-
-  async function fetchQuotes() {
+  const fetchQuotes = useCallback(async () => {
     try {
       const data = await getAllQuotes();
       setQuotes(data);
@@ -43,7 +41,11 @@ export default function ManagePage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => { 
+    fetchQuotes(); 
+  }, [fetchQuotes]);
 
   function handleChange(e) {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));

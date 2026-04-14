@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import QuoteCard from "../components/QuoteCard";
-import { getAllQuotes } from "../api/quotesApi";
+import { getAllQuotes } from "../api/quotesAPi";
 
 export default function QuotesPage() {
   const [quotes, setQuotes] = useState([]);
@@ -18,13 +18,18 @@ export default function QuotesPage() {
     return () => clearTimeout(timer);
   }, [inputValue]);
 
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    getAllQuotes(searchTerm)
-      .then(setQuotes)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+ useEffect(() => {
+    // Punem logica într-o funcție pentru a evita avertismentul React
+    const fetchQuotesData = () => {
+      setLoading(true);
+      setError(null);
+      getAllQuotes(searchTerm)
+        .then(setQuotes)
+        .catch(err => setError(err.message))
+        .finally(() => setLoading(false));
+    };
+
+    fetchQuotesData();
   }, [searchTerm]);
 
   return (
