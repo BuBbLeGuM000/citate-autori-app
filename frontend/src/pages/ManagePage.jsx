@@ -1,190 +1,226 @@
-import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
-import QuoteCard from "../components/QuoteCard";
-import { getAllQuotes, addQuote, updateQuote, deleteQuote } from "../api/quotesAPi";
-import { useFormValidation } from "../hooks/useFormValidation";
-
-const VALIDATION_RULES = {
-  author: {
-    required: true,
-    requiredMsg: "Autorul este obligatoriu.",
-    minLength: 2,
-    minLengthMsg: "Autorul trebuie să aibă cel puțin 2 caractere.",
-    maxLength: 100,
-    maxLengthMsg: "Autorul poate avea maxim 100 de caractere.",
-  },
-  quote: {
-    required: true,
-    requiredMsg: "Citatul este obligatoriu.",
-    minLength: 5,
-    minLengthMsg: "Citatul trebuie să aibă cel puțin 5 caractere.",
-    maxLength: 500,
-    maxLengthMsg: "Citatul poate avea maxim 500 de caractere.",
-  },
-};
+import { useState, useEffect, useCallback } from "react";
+import { getQuotes, addQuote, updateQuote, deleteQuote, fetchAuthorImage } from "../api/quotesAPi";
+import { Plus, Trash2, Edit2, X, Image as ImageIcon, Loader2 } from "lucide-react";
 
 export default function ManagePage() {
   const [quotes, setQuotes] = useState([]);
-  const [editingQuote, setEditingQuote] = useState(null);
-  const [formData, setFormData] = useState({ author: "", quote: "" });
-  const [feedback, setFeedback] = useState({ message: "", type: "" });
-  const [loading, setLoading] = useState(true);
+  const [author, setAuthor] = useState("");
+  const [quoteText, setQuoteText] = useState("");
+  
+  // Stări pentru Laboratorul 7 (Wikipedia Integration)
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState("");
 
-  const { errors, validate, clearErrors } = useFormValidation(VALIDATION_RULES);
+  const [editingId, setEditingId] = useState(null);
+  const [message, setMessage] = useState({ text: "", type: "" });
 
-  const fetchQuotes = useCallback(async () => {
+  const showMsg = (text, type) => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  };
+
+  // useCallback pentru a stabiliza funcția și a respecta regulile hooks
+  const loadQuotes = useCallback(async () => {
     try {
-      const data = await getAllQuotes();
+      const data = await getQuotes();
       setQuotes(data);
     } catch (err) {
-      showFeedback(err.message, "error");
-    } finally {
-      setLoading(false);
+      // Varianta A: Folosim variabila 'err' pentru feedback
+      showMsg(err.message || "Eroare la încărcarea datelor", "error");
     }
   }, []);
 
-  useEffect(() => { 
-    fetchQuotes(); 
-  }, [fetchQuotes]);
+  useEffect(() => {
+    loadQuotes();
+  }, [loadQuotes]);
 
-  function handleChange(e) {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  async function handleFetchImage() {
+    if (!author.trim()) {
+      setImageError("Introdu numele autorului mai întâi");
+      return;
+    }
+    setImageLoading(true);
+    setImageError("");
+    try {
+      const data = await fetchAuthorImage(author);
+      setImageUrl(data.imageUrl);
+      showMsg("Imagine găsită pe Wikipedia!", "success");
+    } catch (err) {
+      // Varianta A: Folosim variabila 'err' pentru a seta eroarea imaginii
+      setImageError(err.message || "Nu s-a putut prelua imaginea");
+      setImageUrl("");
+    } finally {
+      setImageLoading(false);
+    }
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!validate(formData)) return;
+    const payload = { author, quote: quoteText, imageUrl };
 
     try {
-      if (editingQuote) {
-        await updateQuote(editingQuote.id, formData);
-        showFeedback("Citatul a fost actualizat cu succes.", "success");
+      if (editingId) {
+        await updateQuote(editingId, payload);
+        showMsg("Citat actualizat cu succes!", "success");
       } else {
-        await addQuote(formData);
-        showFeedback("Citatul a fost adăugat cu succes.", "success");
+        await addQuote(payload);
+        showMsg("Citat adăugat cu succes!", "success");
       }
       resetForm();
-      fetchQuotes();
+      loadQuotes();
     } catch (err) {
-      showFeedback(err.message, "error");
-    }
-  }
-
-  function handleEdit(quote) {
-    setEditingQuote(quote);
-    setFormData({ author: quote.author, quote: quote.quote });
-    clearErrors();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  async function handleDelete(id) {
-    if (window.confirm("Ești sigur că vrei să ștergi acest citat?")) {
-      try {
-        await deleteQuote(id);
-        showFeedback("Citatul a fost șters.", "success");
-        fetchQuotes();
-      } catch (err) {
-        showFeedback(err.message, "error");
-      }
+      // Varianta A: Folosim 'err' pentru a afișa de ce a eșuat salvarea
+      showMsg(err.message || "Eroare la salvarea datelor", "error");
     }
   }
 
   function resetForm() {
-    setEditingQuote(null);
-    setFormData({ author: "", quote: "" });
-    clearErrors();
+    setAuthor("");
+    setQuoteText("");
+    setImageUrl("");
+    setImageError("");
+    setEditingId(null);
   }
 
-  function showFeedback(message, type) {
-    setFeedback({ message, type });
-    setTimeout(() => setFeedback({ message: "", type: "" }), 3000);
+  function handleEdit(q) {
+    setEditingId(q.id);
+    setAuthor(q.author);
+    setQuoteText(q.quote);
+    setImageUrl(q.imageUrl || "");
+    setImageError("");
   }
 
-  const inputBase = `w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 transition`;
-  const inputClass = (field) => `${inputBase} ${errors[field] ? "border-red-400 focus:ring-red-300 bg-red-50" : "border-gray-300 focus:ring-indigo-300 bg-white"}`;
+  async function handleDelete(id) {
+    if (window.confirm("Sigur vrei să ștergi acest citat?")) {
+      try {
+        await deleteQuote(id);
+        loadQuotes();
+        showMsg("Citatul a fost șters.", "success");
+      } catch (err) {
+        showMsg(err.message || "Eroare la ștergere", "error");
+      }
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-10 bg-white shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-indigo-600">Administrare citate</h1>
-          <Link to="/" className="px-4 py-2 text-sm font-medium text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-colors duration-200">
-            ← Înapoi la citate
-          </Link>
-        </div>
+    <div className="max-w-4xl mx-auto p-6">
+      <header className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Administrare Citate</h1>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
-        {feedback.message && (
-          <div className={`px-4 py-3 rounded-lg text-sm font-medium ${feedback.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
-            {feedback.message}
+      {message.text && (
+        <div className={`p-4 mb-6 rounded-lg border ${
+          message.type === "success" ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"
+        }`}>
+          {message.text}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm mb-10 border border-gray-100">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Autor</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                placeholder="Ex: Albert Einstein"
+                required
+              />
+              <button 
+                type="button"
+                onClick={handleFetchImage}
+                disabled={imageLoading || !author.trim()}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+              >
+                {imageLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <ImageIcon className="w-4 h-4" />}
+                Wiki
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Citat</label>
+            <input
+              type="text"
+              value={quoteText}
+              onChange={(e) => setQuoteText(e.target.value)}
+              className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              placeholder="Introdu textul citatului..."
+              required
+            />
+          </div>
+        </div>
+
+        {imageUrl && (
+          <div className="mb-6 flex items-center gap-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+            <img 
+              src={`http://localhost:5000${imageUrl}`} 
+              alt="Preview" 
+              className="w-16 h-16 object-cover rounded-full border-2 border-white shadow-sm"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-indigo-800 uppercase tracking-wider">Imagine detectată</p>
+              <p className="text-xs text-indigo-600 truncate">{imageUrl}</p>
+            </div>
+            <button type="button" onClick={() => setImageUrl("")} className="p-1.5 hover:bg-indigo-200 rounded-full text-indigo-500 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
           </div>
         )}
+        
+        {imageError && <p className="text-red-500 text-xs mb-4 font-medium">⚠️ {imageError}</p>}
 
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className={`text-lg font-semibold mb-6 ${editingQuote ? "text-amber-600" : "text-indigo-600"}`}>
-            {editingQuote ? "✎ Editează citatul" : "+ Adaugă citat nou"}
-          </h2>
+        <button 
+          type="submit" 
+          className={`w-full py-3 px-4 rounded-lg font-bold text-white transition-all flex items-center justify-center gap-2 shadow-sm ${
+            editingId ? "bg-amber-500 hover:bg-amber-600" : "bg-indigo-600 hover:bg-indigo-700"
+          }`}
+        >
+          {editingId ? <Edit2 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+          {editingId ? "Salvează modificările" : "Adaugă citatul în colecție"}
+        </button>
+        
+        {editingId && (
+          <button type="button" onClick={resetForm} className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 underline">
+            Renunță la editare
+          </button>
+        )}
+      </form>
 
-          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            <div>
-              <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">Autor</label>
-              <input
-                id="author" name="author" type="text"
-                value={formData.author}
-                onChange={handleChange}
-                placeholder="ex. Marcus Aurelius"
-                className={inputClass("author")}
-              />
-              {errors.author && <p className="mt-1 text-xs text-red-500">{errors.author}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="quote" className="block text-sm font-medium text-gray-700 mb-1">Citat</label>
-              <textarea
-                id="quote" name="quote"
-                value={formData.quote}
-                onChange={handleChange}
-                placeholder="Introduceți citatul..."
-                rows={4}
-                className={`${inputClass("quote")} resize-none`}
-              />
-              <div className="flex justify-between mt-1">
-                {errors.quote ? <p className="text-xs text-red-500">{errors.quote}</p> : <span />}
-                <span className={`text-xs ml-auto ${formData.quote.length > 450 ? "text-red-400" : "text-gray-400"}`}>
-                  {formData.quote.length}/500
-                </span>
+      <div className="grid grid-cols-1 gap-4">
+        <h2 className="text-xl font-bold text-gray-700 mb-2">Citate existente ({quotes.length})</h2>
+        {quotes.map((q) => (
+          <div key={q.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center group hover:border-indigo-200 transition-colors">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-12 h-12 shrink-0 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+                {q.imageUrl ? (
+                  <img src={`http://localhost:5000${q.imageUrl}`} className="w-full h-full object-cover" alt={q.author} />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-xs">
+                    {q.author.charAt(0)}
+                  </div>
+                )}
+              </div>
+              <div className="truncate">
+                <p className="font-bold text-gray-900">{q.author}</p>
+                <p className="text-gray-600 italic text-sm truncate">"{q.quote}"</p>
               </div>
             </div>
-
-            <div className="flex gap-3 pt-2">
-              <button type="submit" className={`flex-1 py-2.5 text-sm font-semibold text-white rounded-lg transition-colors duration-200 ${editingQuote ? "bg-amber-500 hover:bg-amber-600" : "bg-indigo-600 hover:bg-indigo-700"}`}>
-                {editingQuote ? "Salvează modificările" : "+ Adaugă citat"}
+            <div className="flex gap-1 ml-4">
+              <button onClick={() => handleEdit(q)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                <Edit2 className="w-4 h-4" />
               </button>
-              {editingQuote && (
-                <button type="button" onClick={resetForm} className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                  ✖ Anulează
-                </button>
-              )}
+              <button onClick={() => handleDelete(q.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
-          </form>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Citate existente <span className="ml-2 text-sm font-normal text-gray-400">({quotes.length})</span>
-          </h2>
-          {loading ? (
-            <p className="text-center text-indigo-500 animate-pulse py-10">Se încarcă...</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quotes.map(q => (
-                <QuoteCard key={q.id} quote={q} onEdit={handleEdit} onDelete={handleDelete} />
-              ))}
-            </div>
-          )}
-        </section>
-      </main>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -22,6 +22,7 @@ const validateId = (req, res, next) => {
 const quoteSchema = Joi.object({
     author: Joi.string().min(2).required(),
     quote: Joi.string().min(5).required(),
+    imageUrl: Joi.string().allow("").optional(), // [cite: 140]
 });
 // API route placeholder
 app.get("/", (req, res) => {
@@ -81,6 +82,57 @@ app.post("/api/quotes", async (req, res) => {
     } catch (error) {
         console.error("Error adding quote:", error);
         res.status(500).json({ error: "Failed to add quote" });
+    }
+});
+
+// Configurare director imagini [cite: 48, 49]
+const IMAGES_DIR = path.join(__dirname, "images");
+if (!fs.existsSync(IMAGES_DIR)) {
+    fs.mkdirSync(IMAGES_DIR, { recursive: true }); // [cite: 54]
+}
+
+// Ruta pentru preluarea imaginii de pe Wikipedia [cite: 64]
+app.post("/api/quotes/fetch-image", async (req, res) => {
+    const { author } = req.body;
+    if (!author || !author.trim()) {
+        return res.status(400).json({ error: "Numele autorului este obligatoriu." }); // [cite: 66, 67]
+    }
+
+    try {
+        const wikiName = author.trim().replace(/\s+/g, "_"); // [cite: 74]
+        const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiName)}`; // [cite: 78]
+
+        const wikiResponse = await fetch(wikiUrl, {
+            headers: { "User-Agent": "PrintingQuotesApp/1.0" } // [cite: 85]
+        });
+
+        if (!wikiResponse.ok) {
+            return res.status(404).json({ error: `Autorul "${author}" nu a fost găsit.` }); // [cite: 90]
+        }
+
+        const wikiData = await wikiResponse.json();
+        if (!wikiData.thumbnail?.source) {
+            return res.status(404).json({ error: "Nu există imagine disponibilă." }); // [cite: 98]
+        }
+
+        const imageUrl = wikiData.thumbnail.source;
+        const ext = imageUrl.split(".").pop().split("?")[0].toLowerCase(); // [cite: 103]
+        const fileName = `${author.trim().toLowerCase().replace(/\s+/g, "_")}.${ext}`; // [cite: 106, 107]
+        const filePath = path.join(IMAGES_DIR, fileName);
+
+        // Verificăm dacă imaginea există deja local [cite: 111]
+        if (fs.existsSync(filePath)) {
+            return res.status(200).json({ imageUrl: `/images/${fileName}` }); // [cite: 114]
+        }
+
+        // Descărcăm și salvăm imaginea [cite: 115, 116]
+        const imgResponse = await fetch(imageUrl);
+        const buffer = Buffer.from(await imgResponse.arrayBuffer()); // [cite: 125]
+        fs.writeFileSync(filePath, buffer); // [cite: 126]
+
+        res.status(200).json({ imageUrl: `/images/${fileName}` }); // [cite: 129]
+    } catch (error) {
+        res.status(500).json({ error: "Eroare internă la preluarea imaginii." }); // [cite: 132]
     }
 });
 

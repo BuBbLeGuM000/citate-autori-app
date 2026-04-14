@@ -38,3 +38,16 @@ export async function deleteQuote(id) {
     const response = await fetch(`${BASE_URL}/${id}`, { method: "DELETE" });
     if (!response.ok) throw new Error("Nu s-a putut şterge citatul.");
 }
+
+export async function fetchAuthorImage(author) {
+    const response = await fetch("/api/quotes/fetch-image", { // [cite: 167]
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ author }), // [cite: 171]
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Nu s-a putut prelua imaginea."); // [cite: 174]
+    }
+    return response.json(); // Returnează { imageUrl: "/images/..." } [cite: 176]
+}
