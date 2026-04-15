@@ -40,7 +40,7 @@ export async function deleteQuote(id) {
 }
 
 export async function fetchAuthorImage(author) {
-    const response = await fetch("/api/quotes/fetch-image", { // [cite: 167]
+    const response = await fetch('${BASE_URL.replace("/quotes", "")}/quotes/fetch-image"', { // [cite: 167]
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ author }), // [cite: 171]

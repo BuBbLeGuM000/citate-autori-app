@@ -107,12 +107,12 @@ app.post("/api/quotes/fetch-image", async (req, res) => {
         });
 
         if (!wikiResponse.ok) {
-            return res.status(404).json({ error: `Autorul "${author}" nu a fost găsit.` }); // [cite: 90]
+            return res.status(404).json({ error: `Autorul "${author}" nu a fost găsit pe Wikipedia.` }); // [cite: 90]
         }
 
         const wikiData = await wikiResponse.json();
         if (!wikiData.thumbnail?.source) {
-            return res.status(404).json({ error: "Nu există imagine disponibilă." }); // [cite: 98]
+            return res.status(404).json({ error: `Nu există imagine disponibilă pentru autorul "${author}". pe Wikipedia.` }); // [cite: 98]
         }
 
         const imageUrl = wikiData.thumbnail.source;
@@ -122,16 +122,22 @@ app.post("/api/quotes/fetch-image", async (req, res) => {
 
         // Verificăm dacă imaginea există deja local [cite: 111]
         if (fs.existsSync(filePath)) {
+            console.log('Imagine existenta returnata: ${fileName}'); // [cite: 112]
             return res.status(200).json({ imageUrl: `/images/${fileName}` }); // [cite: 114]
         }
 
         // Descărcăm și salvăm imaginea [cite: 115, 116]
         const imgResponse = await fetch(imageUrl);
+        if (!imgResponse.ok) {
+            return res.status(500).json({ error: "Nu s-a putut descărca imaginea de pe Wikipedia." }); // [cite: 118]
+        }
         const buffer = Buffer.from(await imgResponse.arrayBuffer()); // [cite: 125]
         fs.writeFileSync(filePath, buffer); // [cite: 126]
+        console.log(`Imagine salvată: ${fileName}`); // [cite: 127]
 
         res.status(200).json({ imageUrl: `/images/${fileName}` }); // [cite: 129]
     } catch (error) {
+        console.error("Eroare la preluarea imaginii:", error.message);
         res.status(500).json({ error: "Eroare internă la preluarea imaginii." }); // [cite: 132]
     }
 });

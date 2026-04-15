@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getQuotes } from "../api/quotesAPi";
+import { getAllQuotes } from "../api/quotesAPi";
 import QuoteCard from "../components/QuoteCard";
 import { Search, X } from "lucide-react";
 
@@ -11,7 +11,7 @@ export default function QuotesPage() {
   useEffect(() => {
     const fetchQuotes = async () => {
       try {
-        const data = await getQuotes();
+        const data = await getAllQuotes();
         setQuotes(data);
       } catch (err) {
         console.error("Eroare la preluarea citatelor:", err);
