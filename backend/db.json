@@ -4,13 +4,13 @@
       "id": "1",
       "author": "Socrates",
       "quote": "The only true wisdom is in knowing you know nothing.",
-      "imageUrl": ""
+      "imageUrl": "/images/socrates.jpg"
     },
     {
       "id": "2",
       "author": "Einstein",
       "quote": "Imagination is more important than knowledge.",
-      "imageUrl": ""
+      "imageUrl": "/images/einstein.jpg"
     },
     {
       "id": "3",
@@ -34,6 +34,30 @@
       "id": "6",
       "author": "Albert Einstein",
       "quote": "\"Cel mai destept om\"",
+      "imageUrl": ""
+    },
+    {
+      "id": "7",
+      "author": "Albert Einstein",
+      "quote": "Omul mult prea cunoscut",
+      "imageUrl": "/images/albert_einstein.jpg"
+    },
+    {
+      "id": "8",
+      "author": "Delia",
+      "quote": "Ce va fi va fi",
+      "imageUrl": "/images/delia.jpg"
+    },
+    {
+      "id": "9",
+      "author": "Marcus Aurelius",
+      "quote": "Fiecare zi este o nouă oportunitate de a-ți modela sufletul și a-ți îmbunătăți gândirea. Nu permite nimănui să îți răpească liniștea interioară.",
+      "imageUrl": "/images/marcus_aurelius.jpg"
+    },
+    {
+      "id": "10",
+      "author": "Iancu Delia",
+      "quote": "Fiecare pas pe care îl facem este o alegere, iar alegerea noastră definește calea pe care o urmăm. În lumina fiecărei decizii, se află puterea de a transforma visurile în realitate.",
       "imageUrl": ""
     }
   ],

@@ -1,4 +1,3 @@
-// Cu proxy Vite activ calea relativă este suficientă
 const BASE_URL = "/api/quotes";
 
 export async function getAllQuotes(search = "") {
@@ -40,14 +39,39 @@ export async function deleteQuote(id) {
 }
 
 export async function fetchAuthorImage(author) {
-    const response = await fetch('${BASE_URL.replace("/quotes", "")}/quotes/fetch-image"', { // [cite: 167]
+    const response = await fetch(`${BASE_URL.replace("/quotes", "")}/quotes/fetch-image`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ author }), // [cite: 171]
+        body: JSON.stringify({ author }),
     });
     if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || "Nu s-a putut prelua imaginea."); // [cite: 174]
+        throw new Error(err.error || "Nu s-a putut prelua imaginea.");
     }
-    return response.json(); // Returnează { imageUrl: "/images/..." } [cite: 176]
+    return response.json(); 
+}
+
+export async function generateQuote(author) {
+    const response = await fetch(`${BASE_URL.replace("/quotes", "")}/quotes/generate-quote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ author }),
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Nu s-a putut genera citatul.");
+    }
+    return response.json();
+}
+
+export async function fetchAuthorInfo(author) {
+    const response = await fetch(`${BASE_URL.replace("/quotes", "")}/quotes/author-info`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ author }),
+    });
+    if (!response.ok) {
+        throw new Error("Nu s-au putut prelua informațiile despre autor.");
+    }
+    return response.json();
 }

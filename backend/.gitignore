@@ -1,0 +1,11 @@
+# Dependențe
+node_modules/
+
+# Fișiere de mediu
+.env
+
+# Imaginile descărcate din Wikipedia (generate automat)
+images/*.jpg
+images/*.png
+images/*.jpeg
+images/*.webp
