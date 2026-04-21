@@ -4,49 +4,50 @@
       "id": "1",
       "author": "Socrates",
       "quote": "The only true wisdom is in knowing you know nothing.",
-      "imageUrl": "/images/socrates.jpg"
+      "imageUrl": "/images/socrates.jpg",
+      "category": "intelepciune"
     },
     {
       "id": "2",
       "author": "Einstein",
       "quote": "Imagination is more important than knowledge.",
-      "imageUrl": "/images/einstein.jpg"
+      "imageUrl": "/images/einstein.jpg",
+      "category": "intelepciune"
     },
     {
       "id": "3",
       "author": "Iancu Delia",
       "quote": "Imi place mancarea facuta de mama",
-      "imageUrl": ""
+      "imageUrl": "",
+      "category": "umor"
     },
     {
       "id": "4",
       "author": "Iancu Delia",
       "quote": "Cea mai faina",
-      "imageUrl": ""
+      "imageUrl": "",
+      "category": "umor"
     },
     {
       "id": "5",
       "author": "Albert Einstein",
       "quote": "\"Cel mai destept om\"",
-      "imageUrl": ""
-    },
-    {
-      "id": "6",
-      "author": "Albert Einstein",
-      "quote": "\"Cel mai destept om\"",
-      "imageUrl": ""
+      "imageUrl": "",
+      "category": "filosofie"
     },
     {
       "id": "7",
       "author": "Albert Einstein",
       "quote": "Omul mult prea cunoscut",
-      "imageUrl": "/images/albert_einstein.jpg"
+      "imageUrl": "/images/albert_einstein.jpg",
+      "category": "umor"
     },
     {
       "id": "8",
       "author": "Delia",
       "quote": "Ce va fi va fi",
-      "imageUrl": "/images/delia.jpg"
+      "imageUrl": "/images/delia.jpg",
+      "category": "intelepciune"
     },
     {
       "id": "9",
@@ -58,7 +59,21 @@
       "id": "10",
       "author": "Iancu Delia",
       "quote": "Fiecare pas pe care îl facem este o alegere, iar alegerea noastră definește calea pe care o urmăm. În lumina fiecărei decizii, se află puterea de a transforma visurile în realitate.",
-      "imageUrl": ""
+      "imageUrl": "",
+      "category": "intelepciune"
+    },
+    {
+      "id": "11",
+      "author": "Einstein",
+      "quote": "Imaginația este tot atât de importantă ca cunoașterea, pentru că ea ne deschide porțile către posibilități nelimitate.",
+      "imageUrl": "/images/einstein.jpg"
+    },
+    {
+      "id": "12",
+      "author": "Ion Creangă",
+      "quote": "Viața e ca o poveste spusă la gura sobei, cu zâmbete și lacrimi, dar fiecare clipă merită să fie trăită cu bucurie.",
+      "imageUrl": "/images/ion_creangă.jpg",
+      "category": "motivatie"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

@@ -3,9 +3,20 @@ node_modules/
 
 # Fișiere de mediu
 .env
+.env.*
 
 # Imaginile descărcate din Wikipedia (generate automat)
 images/*.jpg
 images/*.png
 images/*.jpeg
 images/*.webp
+
+# --- Sistem de operare și Editor (Opțional, dar recomandat) ---
+.DS_Store
+Thumbs.db
+.vscode/
+
+# --- Log-uri de eroare NPM ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
