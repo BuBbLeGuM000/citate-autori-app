@@ -1,139 +1,163 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getAllQuotes } from "../api/quotesApi";
 import QuoteCard from "../components/QuoteCard";
-import { Search, X } from "lucide-react";
+import { getAllQuotes } from "../api/quotesApi";
+import { CATEGORIES, CATEGORY_ALL } from "../constants/categories";
 
 export default function QuotesPage() {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
   const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Debounce pentru căutare
+  // categoria activă — "all" înseamnă fără filtrare
+  const [activeCategory, setActiveCategory] = useState(CATEGORY_ALL);
+
+  // Debounce pentru câmpul de căutare
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchTerm(inputValue);
-    }, 400);
+    const timer = setTimeout(() => setSearchTerm(inputValue), 400);
     return () => clearTimeout(timer);
   }, [inputValue]);
 
-  // Fetch de la backend
+  // Re-executăm fetch când search sau category se schimbă
   useEffect(() => {
-    let isMounted = true; 
+    setLoading(true);
+    setError(null);
+    getAllQuotes(searchTerm, activeCategory) // transmitem și categoria
+      .then(setQuotes)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [searchTerm, activeCategory]); // ← dependență: se re-rulează când searchTerm si activeCategory se schimbă
 
-    const fetchQuotesData = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const data = await getAllQuotes(searchTerm);
-        if (isMounted) setQuotes(data);
-      } catch (err) {
-        if (isMounted) setError(err.message);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchQuotesData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [searchTerm]);
+  // Schimbarea categoriei resetează și căutarea text
+  // pentru a evita filtre combinate confuze
+  function handleCategoryChange(categoryId) {
+    setActiveCategory(categoryId);
+    setInputValue("");
+  }
 
   return (
-    <div className="min-h-screen bg-indigo-50">
-      
-      {/* Header */}
+    <div className="min-h-screen bg-brand-light">
+      {/* — Header — */}
       <header className="sticky top-0 z-10 bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-indigo-600">Printing Quotes</h1>
+            <h1 className="text-2xl font-bold text-indigo-600">
+              Citate Autori Celebri
+            </h1>
             <p className="text-sm text-gray-500">
-              {loading ? "Se caută..." : `${quotes.length} ${quotes.length === 1 ? "citat" : "citate"}`}
+              {loading
+                ? "Se caută..."
+                : `${quotes.length} ${quotes.length === 1 ? "citat" : "citate"}`}
             </p>
           </div>
-          
-          <Link 
+          <Link
             to="/manage"
             className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors duration-200"
           >
-            Administrează
+            ⚙️ Administrează
           </Link>
         </div>
 
-        {/* Bara de căutare */}
-        <div className="max-w-6xl mx-auto px-4 pb-4">
+        {/* — Bara de căutare — */}
+        <div className="max-w-6xl mx-auto px-4 pb-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              🔍
+            </span>
             <input
               type="text"
-              placeholder="Caută un autor sau un citat..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:bg-white transition"
+              placeholder="Caută după autor sau citat..."
+              className="w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:bg-white transition"
             />
             {inputValue && (
-              <button 
+              <button
                 onClick={() => setInputValue("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg"
               >
-                <X className="w-4 h-4 text-gray-400" />
+                ×
               </button>
             )}
           </div>
-          
-          {searchTerm && (
-            <p className="text-xs text-indigo-500 mt-1 pl-1">
-              Rezultate pentru: <strong>"{searchTerm}"</strong>
-            </p>
-          )}
+        </div>
+
+        {/* — Butoane categorii — */}
+        <div className="max-w-6xl mx-auto px-4 pb-4">
+          <div className="flex gap-2 flex-wrap">
+            {/* Butonul "Toate" */}
+            <button
+              onClick={() => handleCategoryChange(CATEGORY_ALL)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors duration-200 ${
+                activeCategory === CATEGORY_ALL
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300"
+              }`}
+            >
+              📂 Toate
+            </button>
+
+            {/* Butoanele pentru fiecare categorie */}
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryChange(cat.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors duration-200 ${
+                  activeCategory === cat.id
+                    ? cat.activeColor
+                    : `bg-white text-gray-600 border-gray-200 hover:${cat.color}`
+                }`}
+              >
+                {cat.emoji} {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
-      {/* Conținut Principal */}
+      {/* — Grid de citate — */}
       <main className="max-w-6xl mx-auto px-4 py-8">
-        {error && <p className="text-center text-red-500 py-10">{error}</p>}
+        {error && <p className="text-center text-red-500 py-10">⚠️ {error}</p>}
 
-        {/* Starea de Loading: Carduri Placeholder (Skeleton) din PDF */}
+        {!error && !loading && quotes.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-gray-400 text-xl mb-2">
+              {searchTerm
+                ? `Niciun citat găsit pentru "${searchTerm}".`
+                : activeCategory !== CATEGORY_ALL
+                  ? `Niciun citat în categoria selectată.`
+                  : "Nu există citate."}
+            </p>
+            <button
+              onClick={() => {
+                setInputValue("");
+                setActiveCategory(CATEGORY_ALL);
+              }}
+              className="text-indigo-500 underline hover:text-indigo-700 text-sm"
+            >
+              Șterge filtrele
+            </button>
+          </div>
+        )}
+
+        {/* Skeleton loading */}
         {loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 animate-pulse space-y-3">
+              <div
+                key={i}
+                className="bg-white rounded-2xl p-6 border border-gray-100 animate-pulse space-y-3"
+              >
                 <div className="h-4 bg-gray-200 rounded w-3/4" />
                 <div className="h-4 bg-gray-200 rounded w-full" />
                 <div className="h-4 bg-gray-200 rounded w-5/6" />
-                <div className="h-3 bg-gray-100 rounded w-1/3 ml-auto mt-4" />
               </div>
             ))}
           </div>
         )}
 
-        {/* Starea Empty (Fără rezultate / Fără citate) */}
-        {!error && !loading && quotes.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-gray-400 text-xl mb-2">
-              {searchTerm 
-                ? `Niciun citat găsit pentru "${searchTerm}".` 
-                : "Nu există citate."}
-            </p>
-            {searchTerm ? (
-               <button onClick={() => setInputValue("")} className="text-indigo-500 underline hover:text-indigo-700 text-sm">
-                 Șterge filtrele
-               </button>
-            ) : (
-               <Link to="/manage" className="text-indigo-500 underline hover:text-indigo-700 text-sm">
-                 Adaugă primul citat →
-               </Link>
-            )}
-          </div>
-        )}
-
-        {/* Randarea Citatelor Reale */}
         {!loading && quotes.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {quotes.map((q) => (
@@ -142,7 +166,6 @@ export default function QuotesPage() {
           </div>
         )}
       </main>
-
     </div>
   );
 }
